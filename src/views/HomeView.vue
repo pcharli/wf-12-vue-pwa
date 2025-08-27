@@ -3,24 +3,29 @@ import InstallBtn from '@/components/InstallBtn.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-
+//store users
 const user = useUserStore()
-
-const pseudo = ref('')
+//router
 const router = useRouter()
 
+//new peudo
+const newPseudo = ref('')
+
+// option de géolocalisation
 const options = {
   enableHighAccuracy: true, // 🔹 active le GPS si dispo
   timeout: 5000, // 🔹 max 5 secondes
   maximumAge: 0, // 🔹 ne pas utiliser de cache
 }
+
+//si on soumet le formulaire
 const init = () => {
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const { latitude, longitude } = position.coords
       const objet = {
         data: {
-          pseudo: pseudo.value,
+          pseudo: newPseudo.value,
           lat: latitude,
           long: longitude,
         },
@@ -35,9 +40,10 @@ const init = () => {
         .then((resp) => resp.json())
         .then((resp) => {
           console.log(resp)
+          //stocker l'_id dans le store
           user.user_id = resp._id
 
-          //redirection
+          //redirection vers la carte
           router.push({ name: 'carte' })
         })
     },
@@ -54,7 +60,7 @@ const errorPos = (err) => console.log(err)
 
   <form action="" @submit.prevent="init">
     <label for="">Pseudo</label>
-    <input type="text" v-model="pseudo" />
+    <input type="text" v-model="newPseudo" />
     <button>Envoyer</button>
   </form>
 </template>
