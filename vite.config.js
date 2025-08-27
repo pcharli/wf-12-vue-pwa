@@ -12,7 +12,7 @@ export default defineConfig({
     vueDevTools(),
     VitePWA({
       registerType: 'autoUpdate',
-      //injectRegister: null, // NE PAS enregistrer de service worker automatiquement
+      injectRegister: null, // NE PAS enregistrer de service worker automatiquement
       manifest: {
         name: 'Démo pwa avec vue',
         short_name: 'Description e cette app',
