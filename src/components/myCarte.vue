@@ -3,9 +3,16 @@ import L from 'leaflet'
 import { onMounted, ref } from 'vue'
 // 👉 importer les assets d’icône pour que Vite les bundle
 
+import 'leaflet/dist/leaflet.css'
+
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+
+import { useUserStore } from '@/stores/user'
+
+const user = useUserStore()
+console.log(user.user_id)
 
 // 👉 fixer les URLs par défaut
 L.Icon.Default.mergeOptions({
@@ -14,9 +21,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 })
 
-const carte = ref(null)
+const carteDiv = ref(null)
 
 let myMarker = null
+
+let markers = []
+
+let map = null
+
+let voisinsLayer = L.layerGroup()
 
 onMounted(() => {
   const options = {
@@ -25,13 +38,13 @@ onMounted(() => {
     maximumAge: 0, // 🔹 ne pas utiliser de cache
   }
   const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
+    attribution: 'Pcharli',
   })
 
   const esri = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     {
-      attribution: 'Tiles © Esri',
+      attribution: 'Pitou',
     },
   )
   // Obtenir la position de l'utilisateur
@@ -39,7 +52,10 @@ onMounted(() => {
     (position) => {
       const { latitude, longitude } = position.coords
 
-      const map = L.map(carte.value).setView([latitude, longitude], 13)
+      map = L.map(carteDiv.value).setView([latitude, longitude], 13)
+
+      // après avoir créé la map :
+      voisinsLayer.addTo(map)
 
       osm.addTo(map) // couche par défaut
 
@@ -61,6 +77,7 @@ onMounted(() => {
 
   navigator.geolocation.watchPosition(
     (position) => {
+      if (!myMarker) return // attendre la création dans getCurrentPosition
       const { latitude, longitude } = position.coords
       myMarker.setLatLng([latitude, longitude])
       changePosition(position.coords)
@@ -70,6 +87,8 @@ onMounted(() => {
     },
     options,
   ) //watch
+
+  lookVoisins()
 })
 
 const changePosition = (position) => {
@@ -88,17 +107,25 @@ const changePosition = (position) => {
   })
 }
 
-const lookVoisins = (map) => {
-  fetch('https://ingrwf12.cepegra-frontend.xyz/cockpit2/api/content/items/users')
-    .then((resp) => resp.json())
-    .then((resp) => {
-      console.log(resp)
-    })
+const lookVoisins = () => {
+  setInterval(() => {
+    fetch('https://ingrwf12.cepegra-frontend.xyz/cockpit2/api/content/items/users')
+      .then((resp) => resp.json())
+      .then((resp) => {
+        console.log(resp)
+        voisinsLayer.clearLayers()
+        resp.forEach((el) => {
+          if (el._id != user.user_id) {
+            L.marker([el.lat, el.long]).addTo(voisinsLayer).bindPopup(el.pseudo)
+          }
+        })
+      })
+  }, 5000)
 }
 </script>
 
 <template>
-  <div id="carte" ref="carte"></div>
+  <div id="carte" ref="carteDiv"></div>
 </template>
 
 <style scoped>
