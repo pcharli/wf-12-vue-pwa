@@ -4,9 +4,11 @@ import { onMounted, ref } from 'vue'
 
 const carte = ref(null)
 
+let myPosition = null
+
 onMounted(() => {
   // Obtenir la position de l'utilisateur
-  navigator.geolocation.watchPosition(
+  navigator.geolocation.getCurrentPosition(
     (position) => {
       const { latitude, longitude } = position.coords
 
@@ -18,12 +20,20 @@ onMounted(() => {
       }).addTo(map)
 
       // Ajouter un marqueur à la position actuelle
-      L.marker([latitude, longitude]).addTo(map).bindPopup('Vous êtes ici.').openPopup()
+      myPosition = L.marker([latitude, longitude])
+        .addTo(map)
+        .bindPopup('Vous êtes ici.')
+        .openPopup()
     },
     (error) => {
       console.error('Erreur de géolocalisation :', error)
     },
-  )
+  ) //getCurrent
+
+  navigator.geolocation.watchPosition((position) => {
+    const { latitude, longitude } = position.coords
+    myPosition.setLatLng([latitude, longitude])
+  }) //watch
 })
 </script>
 
